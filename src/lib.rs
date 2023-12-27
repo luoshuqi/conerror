@@ -104,14 +104,3 @@ impl Display for Location {
         write!(f, "{}:{} {}()", self.file, self.line, self.func)
     }
 }
-
-mod sealed {
-    pub trait Sealed {}
-}
-
-/// 用来限制使用 `[#conerror]` 宏的函数的返回值类型必须为 [`Result<T>`]
-pub trait ConerrorResult: sealed::Sealed {}
-
-impl<T> sealed::Sealed for Result<T> {}
-
-impl<T> ConerrorResult for Result<T> {}
