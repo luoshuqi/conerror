@@ -67,11 +67,16 @@ impl Debug for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.0.source, f)?;
-        if let Some(ref location) = self.0.location {
-            writeln!(f)?;
-            for v in location {
-                writeln!(f, "{}", v)?;
+        match self.0.location {
+            Some(ref location) if !location.is_empty() => {
+                writeln!(f)?;
+                let idx = location.len() - 1;
+                for v in &location[..idx] {
+                    writeln!(f, "{}", v)?;
+                }
+                Display::fmt(&location[idx], f)?;
             }
+            _ => (),
         }
         Ok(())
     }
