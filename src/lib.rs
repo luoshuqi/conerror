@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 use std::any::TypeId;
 use std::fmt::{Debug, Display, Formatter};
 use std::mem::ManuallyDrop;
