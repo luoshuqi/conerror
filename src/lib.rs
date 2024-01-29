@@ -13,7 +13,18 @@ pub use conerror_macro::conerror;
 pub struct Error(Box<Inner>);
 
 impl Error {
-    /// 创建一个不需要位置信息的 [`Error`]
+    /// 返回一个以 `error` 为底层错误，`file`, `line`, `func` 为位置信息的 [Error]
+    pub fn new<T>(error: T, file: &'static str, line: u32, func: &'static str) -> Self
+    where
+        T: Into<Box<dyn std::error::Error + Send + Sync>>,
+    {
+        Self(Box::new(Inner {
+            source: error.into(),
+            location: Some(vec![Location { file, line, func }]),
+        }))
+    }
+
+    /// 返回一个不需要位置信息的 [`Error`]
     pub fn plain<T>(error: T) -> Self
     where
         T: Into<Box<dyn std::error::Error + Send + Sync>>,
