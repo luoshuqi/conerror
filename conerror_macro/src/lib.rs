@@ -35,7 +35,7 @@ fn return_type_assert(func: &ItemFn) -> Stmt {
             let mut ty = ty.clone();
             SubstitueImplTrait.visit_type_mut(&mut ty);
             parse_quote_spanned! {ty.span()=>
-                { <#ty as conerror::ConerrorResult>::ASSERT; }
+                { let _ = <#ty as conerror::ConerrorResult>::ASSERT; }
             }
         }
         ReturnType::Default => {
