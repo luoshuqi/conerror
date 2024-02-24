@@ -2,8 +2,11 @@ use proc_macro::TokenStream;
 
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::visit_mut::{visit_expr_try_mut, VisitMut};
-use syn::{parse_macro_input, parse_quote, parse_quote_spanned, ExprTry, ItemFn, ReturnType, Stmt};
+use syn::visit_mut::{visit_expr_try_mut, visit_generic_argument_mut, VisitMut};
+use syn::{
+    parse_macro_input, parse_quote, parse_quote_spanned, parse_str, ExprTry, GenericArgument,
+    ItemFn, ReturnType, Stmt, Type,
+};
 
 #[proc_macro_attribute]
 pub fn conerror(_: TokenStream, input: TokenStream) -> TokenStream {
@@ -28,12 +31,13 @@ impl<'a> VisitMut for MapErr<'a> {
 
 fn return_type_assert(func: &ItemFn) -> Stmt {
     match func.sig.output {
-        ReturnType::Type(_, ref ty) => parse_quote_spanned! {ty.span()=>
-            {
-                const fn _check_return_type<T>(_: *const conerror::Result<T>) {}
-                _check_return_type(std::ptr::null::<#ty>());
+        ReturnType::Type(_, ref ty) => {
+            let mut ty = ty.clone();
+            SubstitueImplTrait.visit_type_mut(&mut ty);
+            parse_quote_spanned! {ty.span()=>
+                { <#ty as conerror::ConerrorResult>::ASSERT; }
             }
-        },
+        }
         ReturnType::Default => {
             let e = syn::Error::new(
                 func.sig.paren_token.span.close(),
@@ -42,5 +46,19 @@ fn return_type_assert(func: &ItemFn) -> Stmt {
             .to_compile_error();
             parse_quote!(#e)
         }
+    }
+}
+
+struct SubstitueImplTrait;
+
+impl VisitMut for SubstitueImplTrait {
+    fn visit_generic_argument_mut(&mut self, i: &mut GenericArgument) {
+        match i {
+            GenericArgument::Type(Type::ImplTrait(_)) => {
+                *i = parse_str("conerror::SubstitutedImplTrait").unwrap()
+            }
+            _ => (),
+        }
+        visit_generic_argument_mut(self, i)
     }
 }

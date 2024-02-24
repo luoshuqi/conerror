@@ -122,3 +122,17 @@ impl Display for Location {
         write!(f, "{}:{} {}()", self.file, self.line, self.func)
     }
 }
+
+mod sealed {
+    pub trait Sealed {}
+}
+
+pub trait ConerrorResult: sealed::Sealed {
+    const ASSERT: () = ();
+}
+
+impl<T> sealed::Sealed for Result<T> {}
+
+impl<T> ConerrorResult for Result<T> {}
+
+pub struct SubstitutedImplTrait;

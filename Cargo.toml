@@ -1,6 +1,6 @@
 [package]
 name = "conerror"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Provides a macro that automatically adds context to errors"
 license = "MIT"
