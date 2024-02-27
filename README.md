@@ -3,6 +3,7 @@
 Provides a macro that automatically adds context to errors
 
 # example
+
 ```rust
 use conerror::conerror;
 use std::fs::read;
@@ -21,22 +22,27 @@ fn foo() -> conerror::Result<()> {
 
 #[conerror]
 fn bar() -> conerror::Result<()> {
-    baz()?;
+    Baz.baz()?;
     Ok(())
 }
+
+struct Baz;
 
 #[conerror]
-fn baz() -> conerror::Result<()> {
-    read("/root")?;
-    Ok(())
+impl Baz {
+    #[conerror]
+    fn baz(&self) -> conerror::Result<()> {
+        read("/root")?;
+        Ok(())
+    }
 }
-
 ```
 
 Output:
+
 ```
 Permission denied (os error 13)
-src/main.rs:24 baz()
-src/main.rs:18 bar()
-src/main.rs:12 foo()
+src/main.rs:28 demo::Baz::baz()
+src/main.rs:18 demo::bar()
+src/main.rs:12 demo::foo()
 ```

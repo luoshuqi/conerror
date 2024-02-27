@@ -5,22 +5,33 @@ use std::fmt::{Debug, Display, Formatter};
 use std::mem::ManuallyDrop;
 use std::ptr;
 
-pub type Result<T> = std::result::Result<T, Error>;
-
 pub use conerror_macro::conerror;
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// 带位置信息的错误
 pub struct Error(Box<Inner>);
 
 impl Error {
-    /// 返回一个以 `error` 为底层错误，`file`, `line`, `func` 为位置信息的 [Error]
-    pub fn new<T>(error: T, file: &'static str, line: u32, func: &'static str) -> Self
+    /// 返回一个以 `error` 为底层错误，`file`, `line`, `func`, `module` 为位置信息的 [Error]
+    pub fn new<T>(
+        error: T,
+        file: &'static str,
+        line: u32,
+        func: &'static str,
+        module: &'static str,
+    ) -> Self
     where
         T: Into<Box<dyn std::error::Error + Send + Sync>>,
     {
         Self(Box::new(Inner {
             source: error.into(),
-            location: Some(vec![Location { file, line, func }]),
+            location: Some(vec![Location {
+                file,
+                line,
+                func,
+                module,
+            }]),
         }))
     }
 
@@ -37,10 +48,16 @@ impl Error {
 
     /// 给 `error` 加上位置信息
     ///
-    /// 如果 `error` 的类型是 [`Error`]，并且不是创建自 [`Error::plain`]，则把 `file` `line` `func` 追加到 `error` 的位置信息
+    /// 如果 `error` 的类型是 [`Error`]，并且不是创建自 [`Error::plain`]，则把 `file` `line` `func` `module` 追加到 `error` 的位置信息
     ///
     /// 如果 `error` 的类型不是 [`Error`]，则创建一个以 `error` 为底层错误，`file` `line` `func` 为初始位置的 [`Error`]
-    pub fn chain<T>(error: T, file: &'static str, line: u32, func: &'static str) -> Self
+    pub fn chain<T>(
+        error: T,
+        file: &'static str,
+        line: u32,
+        func: &'static str,
+        module: &'static str,
+    ) -> Self
     where
         T: std::error::Error + Send + Sync + 'static,
     {
@@ -49,14 +66,24 @@ impl Error {
             // SAFETY: 已经检查了 error 的类型是 Error, 所以 read 是安全的
             let mut error = unsafe { ptr::read(&error as *const _ as *const Self) };
             if let Some(ref mut location) = error.0.location {
-                location.push(Location { file, line, func });
+                location.push(Location {
+                    file,
+                    line,
+                    func,
+                    module,
+                });
             }
             return error;
         }
 
         Self(Box::new(Inner {
             source: Box::new(error),
-            location: Some(vec![Location { file, line, func }]),
+            location: Some(vec![Location {
+                file,
+                line,
+                func,
+                module,
+            }]),
         }))
     }
 
@@ -115,11 +142,17 @@ pub struct Location {
     pub line: u32,
     /// 错误所在的函数
     pub func: &'static str,
+    /// 函数所属的模块或者 Struct
+    pub module: &'static str,
 }
 
 impl Display for Location {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{} {}()", self.file, self.line, self.func)
+        write!(
+            f,
+            "{}:{} {}::{}()",
+            self.file, self.line, self.module, self.func
+        )
     }
 }
 
