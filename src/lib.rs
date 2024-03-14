@@ -155,17 +155,3 @@ impl Display for Location {
         )
     }
 }
-
-mod sealed {
-    pub trait Sealed {}
-}
-
-pub trait ConerrorResult: sealed::Sealed {
-    const ASSERT: () = ();
-}
-
-impl<T> sealed::Sealed for Result<T> {}
-
-impl<T> ConerrorResult for Result<T> {}
-
-pub struct SubstitutedImplTrait;
