@@ -1,31 +1,51 @@
 use proc_macro::TokenStream;
 
 use quote::quote;
+use syn::parse::discouraged::Speculative;
+use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
 use syn::visit_mut::{visit_generic_argument_mut, visit_impl_item_fn_mut, VisitMut};
 use syn::{
-    parse, parse_quote, parse_quote_spanned, parse_str, ExprTry, GenericArgument, ImplItemFn,
-    ItemFn, ItemImpl, ReturnType, Signature, Stmt, Type,
+    parse_macro_input, parse_quote, parse_quote_spanned, parse_str, ExprTry, GenericArgument,
+    ImplItemFn, ItemFn, ItemImpl, ReturnType, Signature, Stmt, Type,
 };
 
 #[proc_macro_attribute]
 pub fn conerror(_: TokenStream, input: TokenStream) -> TokenStream {
-    match parse::<ItemFn>(input.clone()) {
-        Ok(mut f) => {
+    match parse_macro_input!(input as Item) {
+        Item::Fn(mut f) => {
             MapErr::new(None, Some(f.sig.ident.to_string())).visit_item_fn_mut(&mut f);
             f.block.stmts.insert(0, return_type_assert(&f.sig));
             quote!(#f).into()
         }
-        Err(e) => match parse::<ItemImpl>(input) {
-            Ok(mut item) => {
-                MapErr::new(Some(item.self_ty.clone()), None).visit_item_impl_mut(&mut item);
-                quote!(#item).into()
+        Item::Impl(mut i) => {
+            MapErr::new(Some(i.self_ty.clone()), None).visit_item_impl_mut(&mut i);
+            quote!(#i).into()
+        }
+    }
+}
+
+enum Item {
+    Fn(ItemFn),
+    Impl(ItemImpl),
+}
+
+impl Parse for Item {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let ahead = input.fork();
+        match ahead.parse::<ItemFn>() {
+            Ok(v) => {
+                input.advance_to(&ahead);
+                Ok(Item::Fn(v))
             }
-            Err(mut err) => {
-                err.combine(e);
-                err.to_compile_error().into()
-            }
-        },
+            Err(e) => match input.parse::<ItemImpl>() {
+                Ok(v) => Ok(Item::Impl(v)),
+                Err(mut e1) => {
+                    e1.combine(e);
+                    Err(e1)
+                }
+            },
+        }
     }
 }
 
