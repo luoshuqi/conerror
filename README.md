@@ -42,7 +42,7 @@ Output:
 
 ```
 Permission denied (os error 13)
-src/main.rs:28 demo::Baz::baz()
-src/main.rs:18 demo::bar()
-src/main.rs:12 demo::foo()
+#0 src/main.rs:28 demo::Baz::baz()
+#1 src/main.rs:18 demo::bar()
+#2 src/main.rs:12 demo::foo()
 ```
