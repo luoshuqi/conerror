@@ -7,6 +7,14 @@ use std::ptr;
 
 pub use conerror_macro::conerror;
 
+/// Like [Error::chain], can be used in macro invocations while `#[conerror]` won't work.
+#[macro_export]
+macro_rules! chain {
+    ($result:expr, $func_name:expr) => {
+        $result.map_err(|e| conerror::Error::chain(e, file!(), line!(), $func_name, module_path!()))
+    };
+}
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Error with location information
