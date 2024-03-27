@@ -1,6 +1,6 @@
 [package]
 name = "conerror_macro"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "conerror macro"
 license = "MIT"

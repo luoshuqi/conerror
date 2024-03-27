@@ -4,7 +4,7 @@ use quote::quote;
 use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
-use syn::visit_mut::{visit_impl_item_fn_mut, VisitMut};
+use syn::visit_mut::{visit_expr_try_mut, visit_impl_item_fn_mut, VisitMut};
 use syn::{parse_macro_input, parse_quote_spanned, ExprTry, ImplItemFn, ItemFn, ItemImpl, Type};
 
 #[proc_macro_attribute]
@@ -67,6 +67,7 @@ impl VisitMut for MapErr {
         *i.expr = parse_quote_spanned! {expr.span() =>
             #expr.map_err(|err| conerror::Error::chain(err, file!(), line!(), #ident, #module))
         };
+        visit_expr_try_mut(self, i);
     }
 
     fn visit_impl_item_fn_mut(&mut self, i: &mut ImplItemFn) {
